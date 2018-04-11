@@ -1,9 +1,11 @@
+// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
 Shader "Skybox/Procedural" {
 Properties {
 	[KeywordEnum(None, Simple, High Quality)] _SunDisk ("Sun", Int) = 2
 	_SunSize ("Sun Size", Range(0,1)) = 0.04
 	
-	_AtmosphereThickness ("Atmoshpere Thickness", Range(0,5)) = 1.0
+	_AtmosphereThickness ("Atmosphere Thickness", Range(0,5)) = 1.0
 	_SkyTint ("Sky Tint", Color) = (.5, .5, .5, 1)
 	_GroundColor ("Ground", Color) = (.369, .349, .341, 1)
 
@@ -23,7 +25,6 @@ SubShader {
 		#include "UnityCG.cginc"
 		#include "Lighting.cginc"
 
-		#pragma multi_compile __ UNITY_COLORSPACE_GAMMA
 		#pragma multi_compile _SUNDISK_NONE _SUNDISK_SIMPLE _SUNDISK_HIGH_QUALITY
 
 		uniform half _Exposure;		// HDR exposure
@@ -58,7 +59,7 @@ SubShader {
 
 		static const float kCameraHeight = 0.0001;
 
-		#define kRAYLEIGH (lerp(0, 0.0025, pow(_AtmosphereThickness,2.5)))		// Rayleigh constant
+		#define kRAYLEIGH (lerp(0.0, 0.0025, pow(_AtmosphereThickness,2.5)))		// Rayleigh constant
 		#define kMIE 0.0010      		// Mie constant
 		#define kSUN_BRIGHTNESS 20.0 	// Sun brightness
 
@@ -128,6 +129,7 @@ SubShader {
 		struct appdata_t
 		{
 			float4 vertex : POSITION;
+			UNITY_VERTEX_INPUT_INSTANCE_ID
 		};
 
 		struct v2f
@@ -151,6 +153,8 @@ SubShader {
 		#if SKYBOX_SUNDISK != SKYBOX_SUNDISK_NONE
 			half3	sunColor		: TEXCOORD3;
 		#endif
+
+			UNITY_VERTEX_OUTPUT_STEREO
 		};
 
 
@@ -169,7 +173,9 @@ SubShader {
 		v2f vert (appdata_t v)
 		{
 			v2f OUT;
-			OUT.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+			UNITY_SETUP_INSTANCE_ID(v);
+			UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
+			OUT.pos = UnityObjectToClipPos(v.vertex);
 
 			float3 kSkyTintInGammaSpace = COLOR_2_GAMMA(_SkyTint); // convert tint from Linear back to Gamma
 			float3 kScatteringWavelength = lerp (
@@ -184,7 +190,7 @@ SubShader {
 			float3 cameraPos = float3(0,kInnerRadius + kCameraHeight,0); 	// The camera's current position
 
 			// Get the ray from the camera to the vertex and its length (which is the far point of the ray passing through the atmosphere)
-			float3 eyeRay = normalize(mul((float3x3)_Object2World, v.vertex.xyz));
+			float3 eyeRay = normalize(mul((float3x3)unity_ObjectToWorld, v.vertex.xyz));
 
 			float far = 0.0;
 			half3 cIn, cOut;
@@ -344,7 +350,7 @@ SubShader {
 		// if y >= 0 and < 1 [eyeRay.y <= 0 and > -SKY_GROUND_THRESHOLD] - horizon
 		// if y < 0 [eyeRay.y > 0] - sky
 		#if SKYBOX_SUNDISK == SKYBOX_SUNDISK_HQ
-			half3 ray = normalize(mul((float3x3)_Object2World, IN.vertex));
+			half3 ray = normalize(mul((float3x3)unity_ObjectToWorld, IN.vertex));
 			half y = ray.y / SKY_GROUND_THRESHOLD;
 		#elif SKYBOX_SUNDISK == SKYBOX_SUNDISK_SIMPLE
 			half3 ray = IN.rayDir.xyz;

@@ -1,3 +1,5 @@
+// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
 Shader "Hidden/CubeBlurOdd" {
 	Properties {
 		_MainTex ("Main", CUBE) = "" {}
@@ -19,7 +21,7 @@ Shader "Hidden/CubeBlurOdd" {
 	v2f vert(appdata_base v)
 	{
 		v2f o;
-		o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+		o.pos = UnityObjectToClipPos(v.vertex);
 		o.uvw = v.texcoord;
 		return o;
 	}

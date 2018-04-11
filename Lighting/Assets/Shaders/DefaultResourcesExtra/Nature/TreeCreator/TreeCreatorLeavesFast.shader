@@ -1,3 +1,5 @@
+// Unity built-in shader source. Copyright (c) 2016 Unity Technologies. MIT license (see license.txt)
+
 Shader "Nature/Tree Creator Leaves Fast" {
 Properties {
 	_Color ("Main Color", Color) = (1,1,1,1)
@@ -50,13 +52,16 @@ SubShader {
 			float4 screenPos : TEXCOORD1;
 		#endif
 			UNITY_FOG_COORDS(2)
+			UNITY_VERTEX_OUTPUT_STEREO
 		};
 
 		v2f_leaf VertexLeaf (appdata_full v)
 		{
 			v2f_leaf o;
+			UNITY_SETUP_INSTANCE_ID(v);
+			UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 			TreeVertLeaf(v);
-			o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+			o.pos = UnityObjectToClipPos(v.vertex);
 
 			fixed ao = v.color.a;
 			ao += 0.1; ao = saturate(ao * ao * ao); // emphasize AO
